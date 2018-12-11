@@ -107,7 +107,7 @@ while run < MAX_RUN:
 
 
 
-with open('score_card.csv', 'w') as f:
+with open('dqn_score_card.csv', 'w') as f:
     writer = csv.writer(f)
     writer.writerows(score_card)
 
