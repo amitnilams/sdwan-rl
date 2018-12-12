@@ -81,14 +81,14 @@ observation_space = env.observation_space.shape[0]
 action_space = env.action_space.n
 dqn_solver = DQNSolver(observation_space, action_space)
 run = 0
-score = 0
-MAX_RUN = 3
+MAX_RUN = 100 
 score_card = []
 while run < MAX_RUN:
     run += 1
     state = env.reset()
     state = np.reshape(state, [1, observation_space])
     step = 0
+    score = 0
     while True:
         step += 1
         #env.render()
