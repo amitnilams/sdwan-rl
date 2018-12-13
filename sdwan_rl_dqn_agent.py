@@ -5,7 +5,7 @@
 # Code credit - partially based on https://github.com/gsurma/cartpole/blob/master/cartpole.py
 import random
 import gym
-import gym_sdwan
+import gym_sdwan_stat
 import numpy as np
 from collections import deque
 from keras.models import Sequential
@@ -13,8 +13,9 @@ from keras.layers import Dense
 from keras.optimizers import Adam
 
 import csv
+import argparse
 
-ENV_NAME = "Sdwan-v0"
+ENV_NAME = "Sdwan-stat-v0"
 
 GAMMA = 0.95
 LEARNING_RATE = 0.001
@@ -71,46 +72,71 @@ class DQNSolver:
         self.exploration_rate *= EXPLORATION_DECAY
         self.exploration_rate = max(EXPLORATION_MIN, self.exploration_rate)
 
+    def save_model(self, model_name='model.h5'):
+        # serialize model to JSON
+        model_json = self.model.to_json()
+        with open("model.json", "w") as json_file:
+            json_file.write(model_json)
+        # serialize weights to HDF5
+        self.model.save_weights(model_name)
+        print("Saved model to disk")
 
-# In[6]:
+def main(args):
+    
+    env = gym.make(ENV_NAME)
+    #score_logger = ScoreLogger(ENV_NAME)
+    observation_space = env.observation_space.shape[0]
+    action_space = env.action_space.n
+    dqn_solver = DQNSolver(observation_space, action_space)
+    run = 0
+    MAX_RUN = args.n_episodes
+    score_card = []
+    while run < MAX_RUN:
+        run += 1
+        state = env.reset()
+        state = np.reshape(state, [1, observation_space])
+        step = 0
+        score = 0
+        while True:
+            step += 1
+            #env.render()
+            action = dqn_solver.act(state)
+            state_next, reward, terminal, info = env.step(action)
+            #reward = reward if not terminal else -reward
+            state_next = np.reshape(state_next, [1, observation_space])
+            score += reward
+            dqn_solver.remember(state, action, reward, state_next, terminal)
+            state = state_next
+            if terminal:
+                print ("Run: " + str(run) + ", exploration: " + str(dqn_solver.exploration_rate) + ", score: " + str(score))
+                score_card.append((run, score))
+                break
+            dqn_solver.experience_replay()
 
 
-env = gym.make(ENV_NAME)
-#score_logger = ScoreLogger(ENV_NAME)
-observation_space = env.observation_space.shape[0]
-action_space = env.action_space.n
-dqn_solver = DQNSolver(observation_space, action_space)
-run = 0
-MAX_RUN = 100 
-score_card = []
-while run < MAX_RUN:
-    run += 1
-    state = env.reset()
-    state = np.reshape(state, [1, observation_space])
-    step = 0
-    score = 0
-    while True:
-        step += 1
-        #env.render()
-        action = dqn_solver.act(state)
-        state_next, reward, terminal, info = env.step(action)
-        #reward = reward if not terminal else -reward
-        state_next = np.reshape(state_next, [1, observation_space])
-        score += reward
-        dqn_solver.remember(state, action, reward, state_next, terminal)
-        state = state_next
-        if terminal:
-            print ("Run: " + str(run) + ", exploration: " + str(dqn_solver.exploration_rate) + ", score: " + str(score))
-            score_card.append((run, score))
-            break
-        dqn_solver.experience_replay()
+
+    with open('dqn_stat_score_card_{0}.csv'.format(MAX_RUN), 'w') as f:
+        writer = csv.writer(f)
+        writer.writerows(score_card)
+
+    dqn_solver.save_model('dqn_stat_model_{0}_run.h5'.format(MAX_RUN))
 
 
-
-with open('dqn_score_card.csv', 'w') as f:
-    writer = csv.writer(f)
-    writer.writerows(score_card)
+    env.cleanup()
 
 
-env.cleanup()
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser('DQN Agent')
+    parser.add_argument(
+        '--n-episodes',
+        type=int,
+        default=100)
+    parser.add_argument(
+        '--n-maxticks',
+        type=int,
+        default=30)
+    
+    args = parser.parse_args()
+
+    main(args)
 

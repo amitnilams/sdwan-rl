@@ -4,13 +4,13 @@
 
 import random
 import gym
-import gym_sdwan
+import gym_sdwan_stat
 import numpy as np
 
 import csv
 
 
-ENV_NAME = "Sdwan-v0"
+ENV_NAME = "Sdwan-stat-v0"
 
 
 
@@ -30,14 +30,14 @@ observation_space = env.observation_space.shape[0]
 action_space = env.action_space.n
 agent = RandomAgent(observation_space, action_space)
 run = 0
-score = 0
-MAX_RUN = 3
+MAX_RUN = 100 
 score_card = []
 while run < MAX_RUN:
     run += 1
     state = env.reset()
     state = np.reshape(state, [1, observation_space])
     step = 0
+    score = 0
     while True:
         step += 1
         
@@ -53,7 +53,7 @@ while run < MAX_RUN:
             break
         
 
-with open('random_score_card.csv', 'w') as f:
+with open('random_stat_score_card.csv', 'w') as f:
     writer = csv.writer(f)
     writer.writerows(score_card)
 
