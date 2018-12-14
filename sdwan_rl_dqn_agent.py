@@ -82,7 +82,7 @@ class DQNSolver:
         print("Saved model to disk")
 
 def main(args):
-    
+    random.seed(100)
     env = gym.make(ENV_NAME)
     #score_logger = ScoreLogger(ENV_NAME)
     observation_space = env.observation_space.shape[0]
