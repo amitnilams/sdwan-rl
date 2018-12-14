@@ -87,6 +87,7 @@ def main(args):
     #score_logger = ScoreLogger(ENV_NAME)
     observation_space = env.observation_space.shape[0]
     action_space = env.action_space.n
+    env.MAX_TICKS  = args.n_max_ticks
     dqn_solver = DQNSolver(observation_space, action_space)
     run = 0
     MAX_RUN = args.n_episodes
@@ -132,9 +133,9 @@ if __name__ == '__main__':
         type=int,
         default=100)
     parser.add_argument(
-        '--n-maxticks',
+        '--n-max-ticks',
         type=int,
-        default=30)
+        default=300)
     
     args = parser.parse_args()
 
