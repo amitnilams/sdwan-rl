@@ -54,7 +54,7 @@ def main(args):
                 break
         
 
-    with open('random_stat_score_card.csv', 'w') as f:
+    with open('random_stat_score_card_{0}.csv'.format(MAX_RUN), 'w') as f:
         writer = csv.writer(f)
         writer.writerows(score_card)
 
