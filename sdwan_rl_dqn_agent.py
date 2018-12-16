@@ -110,7 +110,7 @@ def main(args):
             state = state_next
             if terminal:
                 print ("Run: " + str(run) + ", exploration: " + str(dqn_solver.exploration_rate) + ", score: " + str(score))
-                score_card.append((run, score))
+                score_card.append((run, score, step))
                 break
             dqn_solver.experience_replay()
 
