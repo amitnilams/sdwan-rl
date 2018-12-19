@@ -1,21 +1,10 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
 import gym
 import gym_sdwan
-import numpy as np
 import argparse
-import csv
+import numpy as np
 from keras.models import Sequential
 from keras.layers import Dense
-from keras.optimizers import Adam
-
-LEARNING_RATE = 0.001
-
-# In[2]:
+#from keras.optimizers import Adam
 
 
 class DQNPlayer:
@@ -41,55 +30,43 @@ class DQNPlayer:
 # In[ ]:
 
 def main(args):
+
     env = gym.make('Sdwan-v0')
     observation_space = env.observation_space.shape[0]
     action_space = env.action_space.n
     env.MAX_TICKS  = args.n_max_ticks
     dqn_player = DQNPlayer(observation_space, action_space, args.model_file)
-    run = 0
-    MAX_RUN = args.n_episodes
-    score_card = []
-    while run < MAX_RUN:
-        run += 1
-        state = env.reset()
-        state = np.reshape(state, [1, observation_space])
-        step = 0
-        score = 0
-        while True:
-            step += 1
-            #env.render()
-            action = dqn_player.act(state)
-            state_next, reward, terminal, info = env.step(action)
-            #reward = reward if not terminal else -reward
-            state_next = np.reshape(state_next, [1, observation_space])
-            score += reward
-            
-            state = state_next
-            if terminal:
-                    print ("Run:", str(run), "score:", str(score))
-                    score_card.append((run, score, step))
-                    break
-        
+    total_reward = 0
 
-    with open('dqn_play_score_card_{0}.csv'.format(MAX_RUN), 'w') as f:
-        writer = csv.writer(f)
-        writer.writerows(score_card)
-    
+    state = env.reset()
+    print('Initial State:', state)
+    state = np.reshape(state, [1, observation_space])
+    step = 0
+    score = 0
+    error = False
+    while True:
+        step += 1
+        action = dqn_player.act(state)
+        next_state, reward, error, info = env.step(action)
+        total_reward += reward
+        print('Ticks:', step, 'Action:', action, 'Ob:', next_state, 'R:', 
+            reward, 'Total Reward:', total_reward)
+
+        state_next = np.reshape(next_state, [1, observation_space])
+        state = state_next
+
+        if error:
+            print("Episode Aborted  after {} timesteps".format(step))
+            break
+
     env.cleanup()
-
-# In[ ]:
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('DQN Agent')
     parser.add_argument(
-        '--n-episodes',
-        type=int,
-        default=100)
-    parser.add_argument(
         '--n-max-ticks',
         type=int,
-        default=300)
+        default=30)
     parser.add_argument(
         '--model-file',
         type=str,
@@ -98,4 +75,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     main(args)
+
 

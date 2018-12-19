@@ -4,13 +4,13 @@
 import argparse
 import random
 import gym
-import gym_sdwan_stat
+import gym_sdwan
 import numpy as np
 
 import csv
 
 
-ENV_NAME = "Sdwan-stat-v0"
+ENV_NAME = "Sdwan-v0"
 
 
 
@@ -20,7 +20,9 @@ class RandomAgent:
         self.action_space = action_space
  
     def act(self, state):
-        return random.randrange(self.action_space)
+        action = random.randrange(self.action_space)
+        print ("Taking random action", action)
+        return action 
 
 
 def main(args):
@@ -50,11 +52,11 @@ def main(args):
             state = state_next
             if terminal:
                 print ("Run: " + str(run)  + ", score: " + str(score))
-                score_card.append((run, score))
+                score_card.append((run, score, step))
                 break
         
 
-    with open('random_stat_score_card_{0}.csv'.format(MAX_RUN), 'w') as f:
+    with open('random_score_card_{0}.csv'.format(MAX_RUN), 'w') as f:
         writer = csv.writer(f)
         writer.writerows(score_card)
 
@@ -71,7 +73,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--n-max-ticks',
         type=int,
-        default=300)
+        default=30)
     
     args = parser.parse_args()
 
