@@ -138,6 +138,7 @@ class MasterAgent():
     def __init__(self, args):
         save_dir = args.save_dir
         self.save_dir = save_dir
+        self.max_eps = args.n_episodes
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
@@ -169,7 +170,7 @@ class MasterAgent():
                           self.opt, res_queue,
                           i, game_name=ENV_NAME,
                           save_dir=self.save_dir,
-                          max_eps=args.max_eps,
+                          max_eps=self.max_eps,
                           max_ticks = args.n_max_ticks) for i in range(multiprocessing.cpu_count())]
 
         for i, worker in enumerate(workers):
@@ -185,9 +186,12 @@ class MasterAgent():
                 break
         [w.join() for w in workers]
 
-        plt.plot(moving_average_rewards)
+        y = moving_average_rewards
+        #print ("y", y)
+        x = list(range(1, len(y) + 1))
+        plt.plot(x, y)
         plt.ylabel('Moving average ep reward')
-        plt.xlabel('Step')
+        plt.xlabel('Episodes')
         plt.savefig(os.path.join(self.save_dir,
                                  '{} Moving Average.png'.format(ENV_NAME)))
         plt.show(block=True)
@@ -198,7 +202,8 @@ class MasterAgent():
         state = env.reset()
         state = np.reshape(state, [self.observation_space,])
         model = self.global_model
-        model_path = os.path.join(self.save_dir, 'model_{}.h5'.format(ENV_NAME))
+        model_file = 'a3c_stat_model_{}_run.h5'.format(self.max_eps)
+        model_path = os.path.join(self.save_dir, model_file)
         print('Loading model from: {}'.format(model_path))
         model.load_weights(model_path)
         done = False
@@ -207,7 +212,7 @@ class MasterAgent():
 
         try:
             while not done:
-                env.render(mode='rgb_array')
+                #env.render(mode='rgb_array')
                 policy, value = model(tf.convert_to_tensor(state[None, :], dtype=tf.float32))
                 policy = tf.nn.softmax(policy)
                 action = np.argmax(policy)
@@ -279,12 +284,18 @@ class Worker(threading.Thread):
         self.save_dir = save_dir
         self.ep_loss = 0.0
         self.max_eps = max_eps
+        model_file = 'a3c_stat_model_{}_run.h5'.format(self.max_eps)
+        self.model_path = os.path.join(self.save_dir,model_file)
       
 
     def run(self):
         total_step = 1
         mem = Memory()
+        
+        
         while Worker.global_episode < self.max_eps:
+            #print ("global episode", Worker.global_episode, "max eps = ", self.max_eps)
+            episode_num = Worker.global_episode 
             current_state = self.env.reset()
             current_state = np.reshape(current_state, [self.observation_space,])
             mem.clear()
@@ -299,13 +310,13 @@ class Worker(threading.Thread):
                     tf.convert_to_tensor(current_state[None, :],
                                          dtype=tf.float32))
                 probs = tf.nn.softmax(logits)
-#                 print ('probs.shape', probs.shape)
+                #print ('probs.shape', probs.shape)
                 action = np.random.choice(self.action_size, p=probs.numpy()[0])
                 
                 new_state, reward, done, _ = self.env.step(action)
                 new_state = np.reshape(new_state, [self.observation_space,])
-                if done:
-                    reward = -1
+                #if done:
+                #    reward = -1
                 ep_reward += reward
                 mem.store(current_state, action, reward)
 
@@ -330,7 +341,7 @@ class Worker(threading.Thread):
                     time_count = 0
 
                     if done:  # done and print information
-                        Worker.global_moving_average_reward = record(Worker.global_episode,
+                        Worker.global_moving_average_reward = record(episode_num,
                                                                      ep_reward,
                                                                      self.worker_idx,
                                                                      Worker.global_moving_average_reward, 
@@ -341,13 +352,11 @@ class Worker(threading.Thread):
                         if ep_reward > Worker.best_score:
                             with Worker.save_lock:
                                 print("Saving best model to {}, episode score: {}".
-                                      format(self.save_dir, ep_reward))
-                                self.global_model.save_weights(
-                                    os.path.join(self.save_dir,
-                                                 'model_{}.h5'.format(self.game_name))
-                                )
+                                      format(self.model_path, ep_reward))
+                                self.global_model.save_weights(self.model_path)
+                                
                                 Worker.best_score = ep_reward
-                    Worker.global_episode += 1
+                        Worker.global_episode += 1
                 ep_steps += 1
 
                 time_count += 1
@@ -429,13 +438,7 @@ if __name__ == '__main__':
         default=20,
         type=int,
         help='How often to update the global model.')
-    
-    parser.add_argument(
-        '--max-eps',
-        default=1000,
-        type=int,
-        help='Global maximum number of episodes to run.')
-    
+        
     parser.add_argument(
         '--gamma',
         default=0.99,
@@ -443,7 +446,7 @@ if __name__ == '__main__':
     
     parser.add_argument(
         '--save-dir', 
-        default='/tmp/', 
+        default='./', 
         type=str,
         help='Directory in which you desire to save the model.')
     
