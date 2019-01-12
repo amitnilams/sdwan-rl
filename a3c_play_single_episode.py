@@ -80,7 +80,7 @@ def main(args):
         print('Ticks:', step, 'Action:', action, 'Ob:', state, 'R:', 
         reward, 'Total Reward:', score)
 
-        if error:
+        if done:
             print("Episode Aborted  after {} timesteps".format(step))
             break
        
