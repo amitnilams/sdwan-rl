@@ -3,7 +3,7 @@
 
 import os
 import gym
-import gym_sdwan_stat
+import gym_sdwan
 import numpy as np
 import argparse
 import csv
@@ -14,10 +14,7 @@ from tensorflow.python.keras import layers
 import tensorflow as tf
 tf.enable_eager_execution()
 
-import matplotlib.pyplot as plt 
-
-LEARNING_RATE = 0.001
-ENV_NAME = "Sdwan-stat-v0"
+ENV_NAME = "Sdwan-v0"
 
 
 class ActorCriticModel(keras.Model):
@@ -97,10 +94,10 @@ def main(args):
     
     env.cleanup()
     
-    plt.plot(score_card)
-    plt.ylabel('score')
-    plt.xlabel('episodes')
-    plt.show(block=True)
+    #plt.plot(score_card)
+    #plt.ylabel('score')
+    #plt.xlabel('episodes')
+    #plt.show(block=True)
 
 
 if __name__ == '__main__':
